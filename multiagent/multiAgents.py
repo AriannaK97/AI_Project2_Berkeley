@@ -260,7 +260,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 if not v:
                     v.append(action)
                     v.append(newValue[1])
-                    #a = v[1]
                 else:
                     newV = max(v[1], newValue[1])
                     if newV is newValue[1]:
@@ -284,7 +283,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 if not v:
                     v.append(action)
                     v.append(newValue[1])
-                   # b = v[1]
                 else:
                     newV = min(v[1], newValue[1])
 
@@ -315,7 +313,62 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        def value(self, gameState, agent, depth):
+
+            if agent == gameState.getNumAgents()-1:
+                agent = self.index
+                depth += 1
+            else:
+                agent += 1
+
+            if gameState.isLose() or gameState.isWin() or depth == self.depth:
+                return [Directions.STOP, float(self.evaluationFunction(gameState))]
+
+            if agent == self.index:
+                return maxValue(self, gameState, agent, depth)
+            else:
+                return expectimaxValue(self, gameState, agent, depth)
+
+
+        def maxValue(self, gameState, agent, depth):
+            v = []
+            if gameState.isLose() or gameState.isWin():
+                return [Directions.STOP, float(self.evaluationFunction(gameState))]
+
+            for action in gameState.getLegalActions(agent):
+                newValue = value(self, gameState.generateSuccessor(agent,action),agent,depth)
+                if not v:
+                    v.append(action)
+                    v.append(newValue[1])
+                else:
+                    newV = max(v[1], newValue[1])
+
+                    if newV is newValue[1]:
+                        v[0] = action
+                        v[1] = newV
+            return v
+
+
+        def expectimaxValue(self, gameState, agent, depth):
+            v = []
+            if gameState.isLose() or gameState.isWin():
+                return [Directions.STOP, float(self.evaluationFunction(gameState))]
+
+            for action in gameState.getLegalActions(agent):
+                newValue = value(self, gameState.generateSuccessor(agent,action),agent,depth)
+                probability = (1.0 / len(gameState.getLegalActions(agent))) * float(newValue[1])
+                if not v:
+                    v.append(action)
+                    v.append(probability)
+                else:
+                    v[0] = action
+                    v[1] += probability
+
+            return v
+
+
+        return value(self, gameState, self.index - 1, 0)[0]
 
 def betterEvaluationFunction(currentGameState):
     """
