@@ -180,7 +180,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
 
         def maxValue(self, gameState, agent, depth):
-           # v = "", float ("-inf")
             v = []
             if gameState.isLose() or gameState.isWin():
                 return [Directions.STOP, self.evaluationFunction(gameState)]
@@ -190,23 +189,16 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 if not v:
                     v.append(action)
                     v.append(newValue[1])
-
                 else:
                     newV = max(v[1], newValue[1])
 
                     if newV is newValue[1]:
                         v[0] = action
                         v[1] = newV
-               # print "max = ", v, "\n"
-
-
-
-
             return v
 
 
         def minValue(self, gameState, agent, depth):
-            #v = "", float ("inf")
             v = []
             if gameState.isLose() or gameState.isWin():
                 return [Directions.STOP, self.evaluationFunction(gameState)]
@@ -216,26 +208,19 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 if not v:
                     v.append(action)
                     v.append(newValue[1])
-
                 else:
                     newV = min(v[1], newValue[1])
 
                     if newV is newValue[1]:
                         v[0] = action
                         v[1] = newV
-                    #print "min = ", v, "\n"
-                    # if not v:
-                    #    v.append(action)
-                    #    v.append(newValue)
-
-                    # else:
-
             return v
+
 
         return MiniMaxDecision(self, gameState, self.index - 1, 0)[0]
 
 
-    
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -247,6 +232,74 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
+        def MiniMaxDecision(self, gameState, agent, depth,a,b):
+
+            if agent == gameState.getNumAgents()-1:
+                agent = self.index
+                depth += 1
+            else:
+                agent += 1
+
+            if gameState.isLose() or gameState.isWin() or depth == self.depth:
+                return [Directions.STOP, self.evaluationFunction(gameState)]
+
+            if agent == self.index:
+                return maxValue(self, gameState, agent, depth, a, b)
+            else:
+                return minValue(self, gameState, agent, depth, a, b)
+
+
+        def maxValue(self, gameState, agent, depth,a,b):
+            v = []
+            if gameState.isLose() or gameState.isWin() :
+
+                return [Directions.STOP, self.evaluationFunction(gameState)]
+
+            for action in gameState.getLegalActions(agent):
+                newValue = MiniMaxDecision(self, gameState.generateSuccessor(agent,action),agent,depth,a,b)
+                if not v:
+                    v.append(action)
+                    v.append(newValue[1])
+                    #a = v[1]
+                else:
+                    newV = max(v[1], newValue[1])
+                    if newV is newValue[1]:
+                        v[0] = action
+                        v[1] = newV
+
+                if v[1] > b:
+                    return v
+                a = max(a, v[1])
+
+            return v
+
+
+        def minValue(self, gameState, agent, depth,a,b):
+            v = []
+            if gameState.isLose() or gameState.isWin() :
+                return [Directions.STOP, self.evaluationFunction(gameState)]
+
+            for action in gameState.getLegalActions(agent):
+                newValue = MiniMaxDecision(self, gameState.generateSuccessor(agent,action),agent,depth,a,b)
+                if not v:
+                    v.append(action)
+                    v.append(newValue[1])
+                   # b = v[1]
+                else:
+                    newV = min(v[1], newValue[1])
+
+                    if newV is newValue[1]:
+                        v[0] = action
+                        v[1] = newV
+
+                if v[1] < a:
+                    return v
+                b = min(b, v[1])
+
+            return v
+
+        return MiniMaxDecision(self, gameState, self.index - 1, 0, float("-inf"), float("inf"))[0]
+
         util.raiseNotDefined()
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
