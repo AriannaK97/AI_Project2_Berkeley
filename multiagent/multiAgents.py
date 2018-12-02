@@ -80,26 +80,28 @@ class ReflexAgent(Agent):
         FoodList = newFood.asList()
         newGhostPositions = successorGameState.getGhostPositions()  # getGhostPositions() function in file pacman.py
         foodDist = []
-        points = 0          #collecting points that show weather a move is better than another,
-                            # the more the points the better the move
+        points = 0                                                  #collecting points that show weather a move is better than another,
+                                                                    # the more the points the better the move
 
 
-        #calculating all food distances from newPos
+        #calculating all food distances from newPos and storing them in FoodList
         for food in FoodList:
             foodDist.append(manhattanDistance(newPos, food))
 
+        #calculating points for each move of pacman, the "chance numbers" were randomly chosen after multiple trials
         for i in foodDist:
-            if i <= 4:
+            if i <= 4:                                       #if the diastance [newpos,food] <= 4 (better winning chance = 1 point)
                 points += 1
-            elif i <= 15 and i > 4 :
+            elif i <= 15 and i > 4 :                         #if the diastance 4 <[newpos,food] <= 15 (better winning chance = 0.2 point)
                  points += 0.2
             else:
-                points += 0.15
+                points += 0.15                               #in any other case the winning chance is 0.15
 
+        #calculating points for ghosts
         for ghost in newGhostPositions:
-            if ghost == newPos:
-                points = 2 - points
-            if manhattanDistance(newPos, ghost) <= 3.5:
+            if ghost == newPos:                              #ghost's new position is the same as pacman's new one
+                points = 2 - points                          #worst possible scenario, so the points are decreasing as much as possible to avert this move
+            if manhattanDistance(newPos, ghost) <= 3.5:      #the ghost is quite close to pacman
                 points = 1 - points
 
         return successorGameState.getScore() + points
@@ -161,38 +163,46 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
 
-
+        "The function MiniMaxDecision(self, gameState, agent, depth), checks the terminal cases for the algorithm and is "
+        "responsible for calling the appropriate function according to the agent that we are dealing with. In case the agent "
+        "is pacman (agent == 0 or agent == self.index), the function calls the maxValue() function, when the agent is a ghost "
+        "(agent != 0) MiniMaxDecision() is calling minValue() function. "
         def MiniMaxDecision(self, gameState, agent, depth):
 
+            #all agents were searched so the next move is for agent 0, pacman, as we move to the next tree ply by
+            #raising the depth of our search
+            #each ply consists of one pacman's move and all ghosts responses
+            #in any other case we just raise the agents value by one to search the next agent
             if agent == gameState.getNumAgents()-1:
                 agent = self.index
                 depth += 1
             else:
                 agent += 1
-
+            #check for terminal case
             if gameState.isLose() or gameState.isWin() or depth == self.depth:
                 return [Directions.STOP, self.evaluationFunction(gameState)]
 
             if agent == self.index:
-                return maxValue(self, gameState, agent, depth)
+                return maxValue(self, gameState, agent, depth)              #if the agent is pacman call maxValue(),
             else:
-                return minValue(self, gameState, agent, depth)
+                return minValue(self, gameState, agent, depth)              #otherwise call minValue()
 
 
         def maxValue(self, gameState, agent, depth):
             v = []
+            #terminal case check
             if gameState.isLose() or gameState.isWin():
                 return [Directions.STOP, self.evaluationFunction(gameState)]
 
-            for action in gameState.getLegalActions(agent):
+            for action in gameState.getLegalActions(agent):                 #getting legal actions and checking them
                 newValue = MiniMaxDecision(self, gameState.generateSuccessor(agent,action),agent,depth)
-                if not v:
+                if not v:                                                   #if the function is called for the first time
                     v.append(action)
                     v.append(newValue[1])
-                else:
+                else:                                                       #otherwise check for the max value
                     newV = max(v[1], newValue[1])
 
-                    if newV is newValue[1]:
+                    if newV is newValue[1]:                                 #assign propper values in list v
                         v[0] = action
                         v[1] = newV
             return v
@@ -200,23 +210,25 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
         def minValue(self, gameState, agent, depth):
             v = []
+            # terminal case check
             if gameState.isLose() or gameState.isWin():
                 return [Directions.STOP, self.evaluationFunction(gameState)]
 
-            for action in gameState.getLegalActions(agent):
+            for action in gameState.getLegalActions(agent):                 #getting legal actions and checking them
                 newValue = MiniMaxDecision(self, gameState.generateSuccessor(agent,action),agent,depth)
-                if not v:
+                if not v:                                                   #if the function is called for the first time
                     v.append(action)
                     v.append(newValue[1])
                 else:
-                    newV = min(v[1], newValue[1])
+                    newV = min(v[1], newValue[1])                           #otherwise check for the min value
 
-                    if newV is newValue[1]:
+                    if newV is newValue[1]:                                 #assign propper values in list v
                         v[0] = action
                         v[1] = newV
             return v
 
-
+        #call MiniMaxDecision() with agent = -1 and depth = 0
+        #we return the action
         return MiniMaxDecision(self, gameState, self.index - 1, 0)[0]
 
 
@@ -313,7 +325,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        
+
         def value(self, gameState, agent, depth):
 
             if agent == gameState.getNumAgents()-1:
@@ -378,6 +390,83 @@ def betterEvaluationFunction(currentGameState):
       DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
+    def getAction(self, currentGameState):
+        """
+        You do not need to change this method, but you're welcome to.
+
+        getAction chooses among the best options according to the evaluation function.
+
+        Just like in the previous project, getAction takes a GameState and returns
+        some Directions.X for some X in the set {North, South, West, East, Stop}
+        """
+        # Collect legal moves and successor states
+        legalMoves = currentGameState.getLegalActions()
+
+        # Choose one of the best actions
+        scores = [self.evaluationFunction(currentGameState, action) for action in legalMoves]
+        bestScore = max(scores)
+        bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
+        chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+
+        "Add more of your code here if you want to"
+
+        return legalMoves[chosenIndex]
+
+    def evaluationFunction(self, currentGameState, action):
+        """
+        Design a better evaluation function here.
+
+        The evaluation function takes in the current and proposed successor
+        GameStates (pacman.py) and returns a number, where higher numbers are better.
+
+        The code below extracts some useful information from the state, like the
+        remaining food (newFood) and Pacman position after moving (newPos).
+        newScaredTimes holds the number of moves that each ghost will remain
+        scared because of Pacman having eaten a power pellet.
+
+        Print out these variables to see what you're getting, then combine them
+        to create a masterful evaluation function.
+        """
+        # Useful information you can extract from a GameState (pacman.py)
+        successorGameState = currentGameState.generatePacmanSuccessor(action)
+        newPos = successorGameState.getPacmanPosition()
+        newFood = successorGameState.getFood()
+        newGhostStates = successorGameState.getGhostStates()
+        newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+
+        "*** YOUR CODE HERE ***"
+
+        successorGameState = currentGameState.generatePacmanSuccessor(action)
+
+        FoodList = newFood.asList()
+        newGhostPositions = successorGameState.getGhostPositions()  # getGhostPositions() function in file pacman.py
+        foodDist = []
+        points = 0                                                  #collecting points that show weather a move is better than another,
+                                                                    # the more the points the better the move
+
+
+        #calculating all food distances from newPos and storing them in FoodList
+        for food in FoodList:
+            foodDist.append(manhattanDistance(newPos, food))
+
+        #calculating points for each move of pacman, the "chance numbers" were randomly chosen after multiple trials
+        for i in foodDist:
+            if i <= 4:                                       #if the diastance [newpos,food] <= 4 (better winning chance = 1 point)
+                points += 1
+            elif i <= 15 and i > 4 :                         #if the diastance 4 <[newpos,food] <= 15 (better winning chance = 0.2 point)
+                 points += 0.2
+            else:
+                points += 0.15                               #in any other case the winning chance is 0.15
+
+        #calculating points for ghosts
+        for ghost in newGhostPositions:
+            if ghost == newPos:                              #ghost's new position is the same as pacman's new one
+                points = 2 - points                          #worst possible scenario, so the points are decreasing as much as possible to avert this move
+            if manhattanDistance(newPos, ghost) <= 3.5:      #the ghost is quite close to pacman
+                points = 1 - points
+
+        return successorGameState.getScore() + points
+    return better
     util.raiseNotDefined()
 
 # Abbreviation
